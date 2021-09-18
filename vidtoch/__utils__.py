@@ -29,6 +29,7 @@
 import os
 import shutil
 import tempfile
+from multiprocessing import Pool
 
 import cv2
 from imgtoch import makeImage
@@ -37,6 +38,12 @@ from imgtoch import makeImage
 def makeVideo(videoPath: str, savePath: str, acqRate: float = 0.2):
     """
     ### 将视频转换为字符视频
+
+    注意事项：
+
+    因本函数使用了多进程，且因 windows 平台新进程创建机制问题
+
+    请确保本函数处于 __name__ == '__main__' 下，否则会造成递归调用而发生不可预知的后果
 
     参数 videoPath：str，源视频路径
 
@@ -67,14 +74,19 @@ def makeVideo(videoPath: str, savePath: str, acqRate: float = 0.2):
         name = f"{prefix}_{frameNum}.jpg"
         print(f"分解：{name}")
         imgNameList.append(name)
-        cv2.imwrite(os.path.join(imgTemp, name), frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
+        cv2.imwrite(os.path.join(imgTemp, name), frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
         frameNum += 1
     videoCapt.release()
+    makeImageProcessPool = Pool(os.cpu_count() * 2)
     for imgName in imgNameList:
         imgPath = os.path.join(imgTemp, imgName)
         imgSave = os.path.join(charTemp, imgName)
         print(f"转换：{imgName}")
-        makeImage(imgPath, imgSave, scale=acqRate, keepSize=1)
+        makeImageProcessPool.apply_async(
+            makeImage, (imgPath, imgSave), dict(scale=acqRate, keepSize=1)
+        )
+    makeImageProcessPool.close()
+    makeImageProcessPool.join()  # 等待进程全部结束
     shutil.rmtree(imgTemp)
     fourcc = cv2.VideoWriter_fourcc(*"MP42")
     videoWrt = cv2.VideoWriter(savePath, fourcc, fps, (width, height), True)
