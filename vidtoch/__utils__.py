@@ -43,13 +43,16 @@ def makeVideo(videoPath: str, savePath: str, acqRate: float = 0.2, chars=None):
 
     因本函数使用了多进程，且因 windows 平台新进程创建机制问题
 
-    请确保本函数处于 __name__ == '__main__' 下，否则会造成递归调用而发生不可预知的后果
+    请确保你的程序运行入口处于 __name__ == '__main__' 下，否则会造成递归调用而发生不可预知的后果
 
     参数 videoPath：str，源视频路径
 
     参数 savePath：str，生成的视频保存路径，包括文件名且需为 .avi 后缀
 
     参数 acqRate：float，0 < acqRate <= 1，越高越清晰，生成也越慢
+
+    参数 chars: str，视频中使用的字符，无需排序，但为了效果建议使用多些字符
+    且使字符的等效灰度值分布尽量均匀，字符的等效灰度值可以使用 imgtoch 模块的 grayscaleOf 函数查询
     """
     if not isinstance(savePath, str):
         raise TypeError("保存路径参数值数据类型必须为字符串。")
