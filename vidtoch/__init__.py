@@ -3,7 +3,7 @@
 from .__utils__ import makeVideo
 
 NAME = "vidtoch"
-VERSIONNUM = 0, 2, 2
+VERSIONNUM = 0, 2, 3
 VERSION = ".".join(map(str, VERSIONNUM))
 AUTHOR = "hrpzcf"
 EMAIL = "hrpzcf@foxmail.com"
