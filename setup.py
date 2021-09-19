@@ -24,7 +24,7 @@ setup(
     long_description_content_type="text/markdown",
     license="MIT License",
     packages=find_packages(),
-    install_requires=["opencv-python", "imgtoch>=0.0.6"],
+    install_requires=["opencv-python", "imgtoch>=0.2.0"],
     python_requires=">=3.7",
     classifiers=[
         "Intended Audience :: Developers",
