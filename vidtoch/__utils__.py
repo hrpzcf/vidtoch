@@ -35,7 +35,7 @@ import cv2
 from imgtoch import makeImage
 
 
-def makeVideo(videoPath: str, savePath: str, acqRate: float = 0.2):
+def makeVideo(videoPath: str, savePath: str, acqRate: float = 0.2, chars=None):
     """
     ### 将视频转换为字符视频
 
@@ -58,15 +58,13 @@ def makeVideo(videoPath: str, savePath: str, acqRate: float = 0.2):
     videoCapt = cv2.VideoCapture(videoPath)
     if not videoCapt.isOpened():
         return print("源视频文件无法打开，请检查路径是否正确或其他问题。")
+    fps = videoCapt.get(cv2.CAP_PROP_FPS)
     width = int(videoCapt.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(videoCapt.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = videoCapt.get(cv2.CAP_PROP_FPS)
-    imgTemp = tempfile.mkdtemp()
-    charTemp = tempfile.mkdtemp()
+    imgTemp, charImgTemp = tempfile.mkdtemp(), tempfile.mkdtemp()
     baseName = os.path.basename(videoPath)
     prefix = os.path.splitext(baseName)[0]
-    imgNameList = list()
-    frameNum = 0
+    frameNum, imgNameList = 0, list()
     while True:
         boolResult, frame = videoCapt.read()
         if not boolResult:
@@ -78,13 +76,12 @@ def makeVideo(videoPath: str, savePath: str, acqRate: float = 0.2):
         frameNum += 1
     videoCapt.release()
     makeImageProcessPool = Pool(os.cpu_count() * 2)
+    kwdargs = dict(scale=acqRate, keepSize=1, chars=chars)
     for imgName in imgNameList:
         imgPath = os.path.join(imgTemp, imgName)
-        imgSave = os.path.join(charTemp, imgName)
+        imgSave = os.path.join(charImgTemp, imgName)
         print(f"转换：{imgName}")
-        makeImageProcessPool.apply_async(
-            makeImage, (imgPath, imgSave), dict(scale=acqRate, keepSize=1)
-        )
+        makeImageProcessPool.apply_async(makeImage, (imgPath, imgSave), kwdargs)
     makeImageProcessPool.close()
     makeImageProcessPool.join()  # 等待进程全部结束
     shutil.rmtree(imgTemp)
@@ -92,6 +89,6 @@ def makeVideo(videoPath: str, savePath: str, acqRate: float = 0.2):
     videoWrt = cv2.VideoWriter(savePath, fourcc, fps, (width, height), True)
     for imgName in imgNameList:
         print(f"生成：{imgName}")
-        videoWrt.write(cv2.imread(os.path.join(charTemp, imgName)))
+        videoWrt.write(cv2.imread(os.path.join(charImgTemp, imgName)))
     videoWrt.release()
-    shutil.rmtree(charTemp)
+    shutil.rmtree(charImgTemp)
