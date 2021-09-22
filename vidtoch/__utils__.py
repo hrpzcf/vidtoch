@@ -77,9 +77,12 @@ def makeVideo(
         raise TypeError("保存路径参数值数据类型必须为字符串。")
     if os.path.splitext(savePath)[1] != ".avi":
         raise ValueError("文件保存路径中文件名需为'.avi'后缀。")
-    if not overwrite and os.path.exists(savePath):
-        print("文件已存在且参数overWrite值为'False'，生成中断。")
-        return False
+    if os.path.exists(savePath):
+        if not overwrite:
+            print("已有同名文件或目录且参数overwrite值为'False'，生成中断。")
+            return False
+        else:
+            _clearObstacle(savePath)
     videoCapt = vcapt(videoPath)
     if not videoCapt.isOpened():
         return print("源视频文件无法打开，请检查路径是否正确或其他问题。")
@@ -122,6 +125,24 @@ def makeVideo(
         videoWrt.write(imread(os.path.join(charImgTemp, imgName)))
     videoWrt.release()
     shutil.rmtree(charImgTemp)
+    return True
+
+
+def _clearObstacle(path):
+    """检查路径是否存在并尝试删除文件或非空文件夹"""
+    if os.path.exists(path):
+        if os.path.isfile(path):
+            try:
+                os.remove(path)
+            except Exception:
+                print("已存在同名文件且无法删除，生成中断。")
+                return False
+        else:
+            try:
+                os.rmdir(path)
+            except Exception:
+                print("已存在同名非空文件夹无法删除，生成中断。")
+                return False
     return True
 
 
@@ -190,7 +211,7 @@ class FFCmdUtils:
         videoPath: str,
         audioPath: str,
         savePath: str = None,
-        overWrite: bool = False,
+        overwrite: bool = False,
     ):
         """
         ### 封装音频及视频
@@ -199,7 +220,7 @@ class FFCmdUtils:
         参数 videoPath: str，要封装的视频文件路径
         参数 audioPath: str，要封装的音频文件路径
         参数 savePath: str，封装后的视频文件保存路径，包括文件名，忽略则保存到源视频目录，并以'[时间]源视频文件名.原后缀名'作文件名
-        参数 overWrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
+        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
         ```
         """
         if not self.isReady():
@@ -226,7 +247,7 @@ class FFCmdUtils:
             "copy",
             savePath,
         ]
-        if overWrite:
+        if overwrite:
             command.append("-y")
         else:
             command.append("-n")
@@ -237,7 +258,7 @@ class FFCmdUtils:
         videoPath: str,
         saveDir=None,
         option: str = "audio",
-        overWrite: bool = False,
+        overwrite: bool = False,
     ):
         """
         ### 拆分音频及视频
@@ -246,7 +267,7 @@ class FFCmdUtils:
         参数 videoPath: str，要拆分的视频的文件路径
         参数 option: str，可用值：'audio'，仅拆分音频；'video'，仅拆分视频；'both'，拆分音频和视频
         参数 saveDir: str，拆分后文件的保存目录
-        参数 overWrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
+        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
         ```
         """
         if not self.isReady():
@@ -268,7 +289,7 @@ class FFCmdUtils:
         audioSavePath = os.path.join(saveDir, f"{prefix}{fileName}.aac")
         videoSavePath = os.path.join(saveDir, f"{prefix}{fileName}.mp4")
         command = [*self.__cmd, "-i", videoPath]
-        if overWrite:
+        if overwrite:
             command.append("-y")
         else:
             command.append("-n")
@@ -300,7 +321,7 @@ class FFCmdUtils:
         fps: float = None,
         bitRate: int = None,
         codec: str = None,
-        overWrite: bool = False,
+        overwrite: bool = False,
     ):
         """
         ### 转换视频格式
@@ -311,7 +332,7 @@ class FFCmdUtils:
         参数 fps: int or float，转换后的视频的帧率，可忽略
         参数 bitRate: int，转换后的视频的码率，默认单位为k，例如此参数值为'1500'则代表转换后视频限制其码率在1500k左右，可忽略
         参数 codec: str，指定转换使用的编码器名，建议使用'h264'(要求ffmpeg是完整版，否则转换会出错)，可忽略
-        参数 overWrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
+        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
         ```
         """
         if not self.isReady():
@@ -339,7 +360,7 @@ class FFCmdUtils:
             command.extend(("-r", f"{fps}"))
         if bitRate is not None:
             command.extend(("-b:v", f"{bitRate}k"))
-        if overWrite:
+        if overwrite:
             command.append("-y")
         else:
             command.append("-n")
@@ -353,7 +374,7 @@ class FFCmdUtils:
         fps: float = None,
         bitRate: int = None,
         codec: str = None,
-        overWrite: bool = None,
+        overwrite: bool = None,
     ):
         """
         ### 将图片封装为视频
@@ -367,7 +388,7 @@ class FFCmdUtils:
         参数 fps: int or float，转换后的视频的帧率，可忽略
         参数 bitRate: int，转换后的视频的码率，默认单位为k，例如此参数值为'1500'则代表转换后视频限制其码率在1500k左右，可忽略
         参数 codec: str，指定转换使用的编码器名，建议使用'h264'(要求ffmpeg是完整版，否则转换会出错)，可忽略
-        参数 overWrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
+        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
         ```
         """
         if not self.isReady():
@@ -399,7 +420,7 @@ class FFCmdUtils:
             command.extend(("-r", f"{fps}"))
         if bitRate is not None:
             command.extend(("-b:v", f"{bitRate}k"))
-        if overWrite:
+        if overwrite:
             command.extend(("-y", savePath))
         else:
             command.extend(("-n", savePath))
@@ -456,7 +477,7 @@ class vTools:
         savePath: str,
         acqRate: float = 0.2,
         bitRate: int = None,
-        overWrite: bool = False,
+        overwrite: bool = False,
     ):
         """
         ### 保存为字符视频
@@ -465,7 +486,7 @@ class vTools:
         参数 savePath：str，生成的视频的保存路径，包括文件名
         参数 acqRate: float，对原视频的采集率，0 < acqRate <= 1，值越大视频越清晰字体越小，可忽略
         参数 bitRate: int，生成的视频的码率，默认单位为k，例如值为'1500'则代表生成的视频码率限制在1500k，可忽略
-        参数 overWrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
+        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
         ```
         """
         if not isinstance(savePath, str):
@@ -477,9 +498,9 @@ class vTools:
         if not isinstance(bitRate, (int, NONETYPE)):
             raise TypeError("参数bitRate的值必须是整型数据。")
         if self.__ffutils.isReady():
-            return self.__SaveByFFm(savePath, acqRate, bitRate, overWrite)
+            return self.__SaveByFFm(savePath, acqRate, bitRate, overwrite)
         else:
-            return self.__SaveByCV2(savePath, acqRate, overWrite)
+            return self.__SaveByCV2(savePath, acqRate, overwrite)
 
     def close(self):
         if hasattr(self, "__vCapt") and isinstance(self.__vCapt, vcapt):
@@ -550,10 +571,13 @@ class vTools:
             self.__vCapt.get(CAP_PROP_FPS),
         )
 
-    def __SaveByFFm(self, savePath: str, acqRate: float, bitRate: int, overWrite):
-        if not overWrite and os.path.exists(savePath):
-            print("文件已存在且参数overWrite值为'False'，生成中断。")
-            return False
+    def __SaveByFFm(self, savePath: str, acqRate: float, bitRate: int, overwrite):
+        if os.path.exists(savePath):
+            if not overwrite:
+                print("已有同名文件或目录且参数overwrite值为'False'，生成中断。")
+                return False
+            else:
+                _clearObstacle(savePath)
         vTools.__clearD(self.__gImgTmp)
         *_, fps = self.__mkGrayImgs(acqRate)
         if bitRate is None:
@@ -567,13 +591,16 @@ class vTools:
                 bitRate = None
         print("开始使用ffmpeg合成视频...")
         return self.__ffutils.combine(
-            self.__gImgTmp, savePath, fps, bitRate, "h264", overWrite
+            self.__gImgTmp, savePath, fps, bitRate, "h264", overwrite
         )
 
-    def __SaveByCV2(self, savePath: str, acqRate: float, overWrite: bool):
-        if not overWrite and os.path.exists(savePath):
-            print("文件已存在且参数overWrite值为'False'，生成中断。")
-            return False
+    def __SaveByCV2(self, savePath: str, acqRate: float, overwrite: bool):
+        if os.path.exists(savePath):
+            if not overwrite:
+                print("已有同名文件或目录且参数overwrite值为'False'，生成中断。")
+                return False
+            else:
+                _clearObstacle(savePath)
         vTools.__clearD(self.__gImgTmp)
         imgNameList, width, height, fps = self.__mkGrayImgs(acqRate)
         fourcc = VideoWriter_fourcc(*"MP42")
