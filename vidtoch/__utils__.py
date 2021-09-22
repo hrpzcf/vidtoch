@@ -63,7 +63,7 @@ def makeVideo(
 
     因 makeVideo 函数使用了多进程工作方式，且因 windows 平台新进程创建机制问题
 
-    请确保你的程序运行入口处于 __name__ == '__main__' 分支下，否则会造成递归调用而发生不可预知的后果
+    请确保你的程序运行入口唯一且处于 __name__ == '__main__' 分支下，否则会造成递归调用而发生不可预知的后果
 
     ```
     参数 videoPath：str，源视频文件路径
@@ -71,6 +71,8 @@ def makeVideo(
     参数 acqRate: float，对原视频的采集率，0 < acqRate <= 1，值越大视频越清晰字体越小，可忽略
     参数 chars: str，视频中使用的字符，无需排序，但为了效果建议使用多些字符
     且使字符的等效灰度值分布尽量均匀，单字符的等效灰度值可以使用 imgtoch 模块的 grayscaleOf 函数查询
+
+    参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件，可忽略
     ```
     """
     if not isinstance(savePath, str):
@@ -83,7 +85,10 @@ def makeVideo(
             return False
         else:
             _clearObstacle(savePath)
-    videoCapt = vcapt(videoPath)
+    try:
+        videoCapt = vcapt(videoPath)
+    except Exception:
+        print("参数videoPath的值数据类型不正确，仅接受字符串。")
     if not videoCapt.isOpened():
         return print("源视频文件无法打开，请检查路径是否正确或其他问题。")
     fps = videoCapt.get(CAP_PROP_FPS)
@@ -191,7 +196,7 @@ class FFCmdUtils:
             execPath = os.path.join(path, ffexecutable)
             if os.path.isfile(execPath) and os.access(execPath, 1):
                 return execPath
-        print("找不到任何ffmpeg可执行文件，FFCmdUtils将不可用。")
+        print("找不到任何ffmpeg可执行文件。")
         return None
 
     def isReady(self) -> bool:
@@ -220,7 +225,7 @@ class FFCmdUtils:
         参数 videoPath: str，要封装的视频文件路径
         参数 audioPath: str，要封装的音频文件路径
         参数 savePath: str，封装后的视频文件保存路径，包括文件名，忽略则保存到源视频目录，并以'[时间]源视频文件名.原后缀名'作文件名
-        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
+        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件，可忽略
         ```
         """
         if not self.isReady():
@@ -267,7 +272,7 @@ class FFCmdUtils:
         参数 videoPath: str，要拆分的视频的文件路径
         参数 option: str，可用值：'audio'，仅拆分音频；'video'，仅拆分视频；'both'，拆分音频和视频
         参数 saveDir: str，拆分后文件的保存目录
-        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
+        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件，可忽略
         ```
         """
         if not self.isReady():
@@ -332,7 +337,7 @@ class FFCmdUtils:
         参数 fps: int or float，转换后的视频的帧率，可忽略
         参数 bitRate: int，转换后的视频的码率，默认单位为k，例如此参数值为'1500'则代表转换后视频限制其码率在1500k左右，可忽略
         参数 codec: str，指定转换使用的编码器名，建议使用'h264'(要求ffmpeg是完整版，否则转换会出错)，可忽略
-        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
+        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件，可忽略
         ```
         """
         if not self.isReady():
@@ -388,7 +393,7 @@ class FFCmdUtils:
         参数 fps: int or float，转换后的视频的帧率，可忽略
         参数 bitRate: int，转换后的视频的码率，默认单位为k，例如此参数值为'1500'则代表转换后视频限制其码率在1500k左右，可忽略
         参数 codec: str，指定转换使用的编码器名，建议使用'h264'(要求ffmpeg是完整版，否则转换会出错)，可忽略
-        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
+        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件，可忽略
         ```
         """
         if not self.isReady():
@@ -429,6 +434,17 @@ class FFCmdUtils:
 
 class vTools:
     def __init__(self, chars: str = None, ffmpeg: str = None, procNum: int = None):
+        """
+        ### vTools 类，包含 open, save, close, isOpened 四个公共方法
+
+        请确保你的程序运行入口唯一且处于 __name__ == '__main__' 分支下，否则会造成递归调用而发生不可预知的后果
+
+        ```
+        参数 chars: str，生成的视频要使用的字符，字符串中字符数应大于2个，字符串无需按等效灰度手动排序，可忽略
+        参数 ffmpeg: str，ffmpeg可执行文件的路径，为 None 则在当前目录或环境变量中查找，找不到则生成的文件无声音，可忽略
+        参数 procNum: int，转换成字符视频时使用的进程数，默认是 cpu数*2，可忽略
+        ```
+        """
         if chars is None:
             chars = "HdRQA#PXCFJIv?!+^-:. "
         if not isinstance(chars, str):
@@ -448,6 +464,8 @@ class vTools:
         self.__procNum = procNum
         self.__vPath = None
         self.__vCapt = None
+        self.__audioTmp = tempfile.mkdtemp()
+        self.__videoTmp = tempfile.mkdtemp()
         self.__imgTmp = tempfile.mkdtemp()
         self.__gImgTmp = tempfile.mkdtemp()
 
@@ -469,7 +487,7 @@ class vTools:
             self.__vCapt = vcapt(videoPath)
             self.__vPath = videoPath
         except Exception:
-            print(f"参数videoPath的值类型不正确。")
+            print(f"参数videoPath的值数据类型不正确，仅接受字符串。")
         return self
 
     def save(
@@ -486,7 +504,7 @@ class vTools:
         参数 savePath：str，生成的视频的保存路径，包括文件名
         参数 acqRate: float，对原视频的采集率，0 < acqRate <= 1，值越大视频越清晰字体越小，可忽略
         参数 bitRate: int，生成的视频的码率，默认单位为k，例如值为'1500'则代表生成的视频码率限制在1500k，可忽略
-        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件
+        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件，可忽略
         ```
         """
         if not isinstance(savePath, str):
@@ -498,15 +516,19 @@ class vTools:
         if not isinstance(bitRate, (int, NONETYPE)):
             raise TypeError("参数bitRate的值必须是整型数据。")
         if self.__ffutils.isReady():
-            return self.__SaveByFFm(savePath, acqRate, bitRate, overwrite)
+            return self.__GenByFFm(savePath, acqRate, bitRate, overwrite)
         else:
-            return self.__SaveByCV2(savePath, acqRate, overwrite)
+            return self.__GenByCV2(savePath, acqRate, overwrite)
 
     def close(self):
+        self.__vPath = None
         if hasattr(self, "__vCapt") and isinstance(self.__vCapt, vcapt):
             self.__vCapt.release()
-        self.__vPath = None
         try:
+            if hasattr(self, "__audioTmp"):
+                shutil.rmtree(self.__audioTmp)
+            if hasattr(self, "__videoTmp"):
+                shutil.rmtree(self.__videoTmp)
             if hasattr(self, "__imgTmp"):
                 shutil.rmtree(self.__imgTmp)
             if hasattr(self, "__gImgTmp"):
@@ -537,10 +559,13 @@ class vTools:
         )
 
     def __mkGrayImgs(self, acqRate: float = 0.2):
-        """生成字符图片"""
+        """拆分音频文件及生成字符图片"""
         if not self.isOpened():
             return print("视频文件没有被打开，请检查路径是否正确或其他问题。")
         vTools.__clearD(self.__imgTmp)
+        vTools.__clearD(self.__audioTmp)
+        if self.__ffutils.isReady():
+            self.__ffutils.demux(self.__vPath, self.__audioTmp)
         prefix = os.path.splitext(os.path.basename(self.__vPath))[0]
         frameNum, imgNameList = 0, list()
         print("开始分解视频...")
@@ -571,7 +596,7 @@ class vTools:
             self.__vCapt.get(CAP_PROP_FPS),
         )
 
-    def __SaveByFFm(self, savePath: str, acqRate: float, bitRate: int, overwrite):
+    def __GenByFFm(self, savePath: str, acqRate: float, bitRate: int, overwrite):
         if os.path.exists(savePath):
             if not overwrite:
                 print("已有同名文件或目录且参数overwrite值为'False'，生成中断。")
@@ -579,6 +604,7 @@ class vTools:
             else:
                 _clearObstacle(savePath)
         vTools.__clearD(self.__gImgTmp)
+        vTools.__clearD(self.__videoTmp)
         *_, fps = self.__mkGrayImgs(acqRate)
         if bitRate is None:
             try:
@@ -589,12 +615,26 @@ class vTools:
                 )
             except Exception:
                 bitRate = None
-        print("开始使用ffmpeg合成视频...")
-        return self.__ffutils.combine(
-            self.__gImgTmp, savePath, fps, bitRate, "h264", overwrite
-        )
+        ext = os.path.splitext(savePath)[1]
+        vidTmpFileName = f"{strftime('%Y-%m-%d_%H-%M-%S', localtime())}{ext}"
+        tmpFullPath = os.path.join(self.__videoTmp, vidTmpFileName)
+        print("开始使用ffmpeg合成...")
+        if not self.__ffutils.combine(
+            self.__gImgTmp, tmpFullPath, fps, bitRate, "h264", overwrite
+        ):
+            return False
+        try:
+            audio = os.listdir(self.__audioTmp)
+        except Exception:
+            audio = None
+        if audio:
+            audioFullPath = os.path.join(self.__audioTmp, audio[0])
+            self.__ffutils.mux(tmpFullPath, audioFullPath, savePath)
+        else:
+            print("音频缓存文件读取失败，无法添加音频。")
+            shutil.move(tmpFullPath, savePath)
 
-    def __SaveByCV2(self, savePath: str, acqRate: float, overwrite: bool):
+    def __GenByCV2(self, savePath: str, acqRate: float, overwrite: bool):
         if os.path.exists(savePath):
             if not overwrite:
                 print("已有同名文件或目录且参数overwrite值为'False'，生成中断。")
@@ -609,7 +649,7 @@ class vTools:
         except Exception:
             print("视频写入失败，检查保存位置是否有写入权限。")
             return False
-        print("开始合成视频...")
+        print("开始使用OpenCV合成(无音频)...")
         for imgName in imgNameList:
             videoWrt.write(imread(os.path.join(self.__gImgTmp, imgName)))
         videoWrt.release()
