@@ -26,7 +26,11 @@ if __name__ == "__main__":
     # 此函数有不少缺点，生成的视频没有声音，码率无法控制导致文件体积非常大，只能用avi后缀
 ```
 
-### 用法 2：使用 vidtoch.vTools 类生成有声音的字符视频(依赖ffmpeg)
+### 用法 2：使用 vidtoch.vTools 类生成有声音的字符视频，依赖[FFMPEG][1]
+
+------
+
+#### 点击 [ffmpeg][1] 下载，解压，将其放到当前工作目录，或放到任意目录并将路径添加到环境变量，或放到任意目录，在 vTools 类中指定路径，如 vt = vTools(ffmpeg=r"d:\ffmpeg\bin")
 
 ```python
 # coding: utf-8
@@ -91,3 +95,5 @@ if __name__ == "__main__":
     # 尽量将 acqRate 设置的小些，否则生成视频会非常慢
     makeVideo("1.mp4", "new.avi", acqRate=0.1)  # 图片 1.mp4 已在当前目录中
 ```
+
+[1]: https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-full.7z
