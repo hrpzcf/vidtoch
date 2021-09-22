@@ -49,7 +49,13 @@ from imgtoch import makeImage
 NONETYPE = type(None)
 
 
-def makeVideo(videoPath: str, savePath: str, acqRate: float = 0.2, chars=None):
+def makeVideo(
+    videoPath: str,
+    savePath: str,
+    acqRate: float = 0.2,
+    chars=None,
+    overwrite: bool = False,
+):
     """
     ### 将视频转换为字符视频
 
@@ -71,6 +77,9 @@ def makeVideo(videoPath: str, savePath: str, acqRate: float = 0.2, chars=None):
         raise TypeError("保存路径参数值数据类型必须为字符串。")
     if os.path.splitext(savePath)[1] != ".avi":
         raise ValueError("文件保存路径中文件名需为'.avi'后缀。")
+    if not overwrite and os.path.exists(savePath):
+        print("文件已存在且参数overWrite值为'False'，生成中断。")
+        return False
     videoCapt = vcapt(videoPath)
     if not videoCapt.isOpened():
         return print("源视频文件无法打开，请检查路径是否正确或其他问题。")
