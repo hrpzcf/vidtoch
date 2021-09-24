@@ -3,7 +3,7 @@
 from .__utils__ import FFCmdUtils, makeVideo, vTools
 
 NAME = "vidtoch"
-VERSIONNUM = 0, 3, 0
+VERSIONNUM = 0, 4, 0
 VERSION = ".".join(map(str, VERSIONNUM))
 AUTHOR = "hrpzcf"
 EMAIL = "hrpzcf@foxmail.com"
