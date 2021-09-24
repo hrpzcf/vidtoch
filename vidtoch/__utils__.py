@@ -445,13 +445,12 @@ class vTools:
         参数 procNum: int，转换成字符视频时使用的进程数，默认是 cpu数*2，可忽略
         ```
         """
-        if chars is None:
-            chars = "HdRQA#PXCFJIv?!+^-:. "
-        if not isinstance(chars, str):
-            raise TypeError("参数chars的值必须是字符串类型。")
-        if len(chars) < 2:
-            raise ValueError("参数chars的值字符个数不能少于2个。")
-        self.__charMap = chars
+        if chars is not None:
+            if not isinstance(chars, str):
+                raise TypeError("参数chars的值必须是字符串类型。")
+            if len(chars) < 2:
+                raise ValueError("参数chars的值字符个数不能少于2个。")
+        self.__chars = chars
         if not isinstance(ffmpeg, (str, NONETYPE)):
             raise TypeError("参数ffmpeg的值必须是字符串类型。")
         if procNum is None:
@@ -489,6 +488,23 @@ class vTools:
         except Exception:
             print(f"参数videoPath的值数据类型不正确，仅接受字符串。")
         return self
+
+    @property
+    def chars(self):
+        return self.__chars
+
+    @chars.setter
+    def chars(self, chars):
+        if chars is not None:
+            if not isinstance(chars, str):
+                raise TypeError("参数chars的值必须是字符串类型。")
+            if len(chars) < 2:
+                raise ValueError("参数chars的值字符个数不能少于2个。")
+        self.__chars = chars
+
+    @chars.deleter
+    def chars(self):
+        self.__chars = "HdRQA#PXCFJIv?!+^-:. "
 
     def save(
         self,
@@ -581,7 +597,7 @@ class vTools:
             frameNum += 1
         self.__vCapt.set(CAP_PROP_POS_FRAMES, 0)
         makeImageProcessPool = Pool(self.__procNum)
-        kwdargs = dict(scale=acqRate, keepSize=1, chars=self.__charMap)
+        kwdargs = dict(scale=acqRate, keepSize=1, chars=self.__chars)
         print("开始转换图像...")
         for imgName in imgNameList:
             imgPath = os.path.join(self.__imgTmp, imgName)
