@@ -437,7 +437,7 @@ class vTools:
         """
         ### vTools 类，包含 open, save, close, isOpened 四个公共方法
 
-        请确保你的程序运行入口唯一且处于 __name__ == '__main__' 分支下，否则会造成递归调用而发生不可预知的后果
+        请确保你的程序运行入口处于 __name__ == '__main__' 分支下，否则会造成递归调用而发生不可预知的后果
 
         ```
         参数 chars: str，生成的视频要使用的字符，字符串中字符数应大于2个，字符串无需按等效灰度手动排序，可忽略
@@ -633,10 +633,10 @@ class vTools:
                 bitRate = None
         ext = os.path.splitext(savePath)[1]
         vidTmpFileName = f"{strftime('%Y-%m-%d_%H-%M-%S', localtime())}{ext}"
-        tmpFullPath = os.path.join(self.__videoTmp, vidTmpFileName)
+        vidTmpFullPath = os.path.join(self.__videoTmp, vidTmpFileName)
         print("开始使用ffmpeg合成...")
         if not self.__ffutils.combine(
-            self.__gImgTmp, tmpFullPath, fps, bitRate, "h264", overwrite
+            self.__gImgTmp, vidTmpFullPath, fps, bitRate, "h264", overwrite
         ):
             return False
         try:
@@ -645,10 +645,10 @@ class vTools:
             audio = None
         if audio:
             audioFullPath = os.path.join(self.__audioTmp, audio[0])
-            self.__ffutils.mux(tmpFullPath, audioFullPath, savePath)
+            self.__ffutils.mux(vidTmpFullPath, audioFullPath, savePath)
         else:
             print("音频缓存文件读取失败，无法添加音频。")
-            shutil.move(tmpFullPath, savePath)
+            shutil.move(vidTmpFullPath, savePath)
 
     def __GenByCV2(self, savePath: str, acqRate: float, overwrite: bool):
         if os.path.exists(savePath):
