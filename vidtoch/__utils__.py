@@ -281,12 +281,12 @@ class FFCmdUtils:
             raise TypeError("参数videoPath的值数据类型必须是字符串。")
         OPTS = "audio", "video", "both"
         if option not in OPTS:
-            raise ValueError(f"参数 option 的值无效，可用值为：{OPTS}。")
+            raise ValueError(f"参数option的值无效，可用值为：{OPTS}。")
         dirPath, basename = os.path.split(videoPath)
         if saveDir is None:
             saveDir = dirPath
         elif not isinstance(saveDir, str):
-            raise TypeError("参数savePath的值数据类型必须是字符串。")
+            raise TypeError("参数saveDir的值数据类型必须是字符串。")
         if not os.path.isdir(saveDir):
             raise ValueError("参数saveDir的值所指的目录不存在或无法访问。")
         prefix = strftime("[%Y-%m-%d_%H-%M-%S]", localtime())
@@ -431,6 +431,52 @@ class FFCmdUtils:
             command.extend(("-n", savePath))
         return FFCmdUtils.executeCmd(command)
 
+    def extract(
+        self,
+        videoPath: str,
+        saveDir: str = None,
+        suffix: str = ".jpg",
+        overwrite: bool = False,
+    ):
+        """
+        ### 从视频中提取图片
+
+        参数 videoPath: str，视频文件路径
+        参数 saveDir: str，提取后图片的保存目录，为None则保存至视频文件所在文件夹，可忽略
+        参数 suffix: str，提取的图片的后缀名，可忽略
+        参数 overwrite: bool，如果保存目录已有同名文件，此参数控制是否覆盖同名文件，可忽略
+        """
+        if not self.isReady():
+            return False
+        if not isinstance(videoPath, str):
+            raise TypeError("参数videoPath的值数据类型必须是字符串。")
+        dirPath, basename = os.path.split(videoPath)
+        prefix = os.path.splitext(basename)[0]
+        if saveDir is None:
+            dirBaseName = f"{strftime('[%Y-%m-%d_%H-%M-%S]', localtime())} {prefix}"
+            saveDir = os.path.join(dirPath, dirBaseName)
+        elif not isinstance(saveDir, str):
+            raise TypeError("参数saveDir的值数据类型必须是字符串。")
+        if not os.path.isdir(saveDir):
+            if not os.path.exists(saveDir):
+                try:
+                    os.makedirs(saveDir)
+                except Exception:
+                    return print("无法创建保存目录，操作中断。")
+            else:
+                raise Exception("保存目录不存在且名称已被文件占用。")
+        validSuffix = ".jpg", ".jpeg", ".png"
+        if suffix not in validSuffix:
+            suffix = validSuffix[0]
+            print(f"参数suffix的值无效，默认使用'.jpg'，可用值：{validSuffix}。")
+        fullSavePath = os.path.join(saveDir, f"{prefix}_%d{suffix}")
+        command = [*self.__cmd, "-i", videoPath, fullSavePath]
+        if overwrite:
+            command.append("-y")
+        else:
+            command.append("-n")
+        return FFCmdUtils.executeCmd(command)
+
 
 class vTools:
     def __init__(self, chars: str = None, ffmpeg: str = None, procNum: int = None):
@@ -442,7 +488,7 @@ class vTools:
         ```
         参数 chars: str，生成的视频要使用的字符，字符串中字符数应大于2个，字符串无需按等效灰度手动排序，可忽略
         参数 ffmpeg: str，ffmpeg可执行文件的路径，为 None 则在当前目录或环境变量中查找，找不到则生成的文件无声音，可忽略
-        参数 procNum: int，转换成字符视频时使用的进程数，默认是 cpu数*2，可忽略
+        参数 process: int，转换成字符视频时使用的进程数，默认是 cpu数*2，可忽略
         ```
         """
         if chars is not None:
