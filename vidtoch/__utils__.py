@@ -28,6 +28,7 @@
 
 import os
 import shutil
+import sys
 import tempfile
 from multiprocessing import Pool
 from subprocess import STARTUPINFO, run
@@ -44,9 +45,14 @@ from cv2 import (
 )
 from cv2 import VideoCapture as vcapt
 from cv2 import VideoWriter, VideoWriter_fourcc, imread, imwrite
-from imgtoch import makeImage
+from imgtoch import VERSION, VERSIONNUM, makeImage
 
+
+if VERSIONNUM < (0, 2, 0):
+    print(f"依赖库imgtoch({VERSION})版本低于0.2.0。")
+    sys.exit(-1)
 NONETYPE = type(None)
+PRESETCHARS = "HR#PXCFJIv?!+^-:. "
 
 
 def makeVideo(
@@ -134,7 +140,7 @@ def makeVideo(
 
 
 def _clearObstacle(path):
-    """检查路径是否存在并尝试删除文件或非空文件夹"""
+    """检查路径是否存在并尝试删除文件或空文件夹"""
     if os.path.exists(path):
         if os.path.isfile(path):
             try:
@@ -146,7 +152,7 @@ def _clearObstacle(path):
             try:
                 os.rmdir(path)
             except Exception:
-                print("已存在同名非空文件夹无法删除，生成中断。")
+                print("已存在同名非空文件夹，生成中断。")
                 return False
     return True
 
@@ -509,10 +515,10 @@ class vTools:
         self.__procNum = procNum
         self.__vPath = None
         self.__vCapt = None
-        self.__audioTmp = tempfile.mkdtemp()
-        self.__videoTmp = tempfile.mkdtemp()
         self.__imgTmp = tempfile.mkdtemp()
         self.__gImgTmp = tempfile.mkdtemp()
+        self.__audioTmp = tempfile.mkdtemp()
+        self.__videoTmp = tempfile.mkdtemp()
 
     def __enter__(self):
         return self
@@ -550,7 +556,7 @@ class vTools:
 
     @chars.deleter
     def chars(self):
-        self.__chars = "HdRQA#PXCFJIv?!+^-:. "
+        self.__chars = PRESETCHARS
 
     def save(
         self,
@@ -619,6 +625,12 @@ class vTools:
         return (
             self.__vPath and isinstance(self.__vCapt, vcapt) and self.__vCapt.isOpened()
         )
+
+    def __extractByFFm(self):
+        pass
+
+    def __extractByCV2(self):
+        pass
 
     def __mkGrayImgs(self, acqRate: float = 0.2):
         """拆分音频文件及生成字符图片"""
