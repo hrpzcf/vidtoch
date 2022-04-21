@@ -47,10 +47,10 @@ from cv2 import VideoCapture as vcapt
 from cv2 import VideoWriter, VideoWriter_fourcc, imread, imwrite
 from imgtoch import VERSION, VERSIONNUM, makeImage
 
-
 if VERSIONNUM < (0, 2, 0):
-    print(f"依赖库imgtoch({VERSION})版本低于0.2.0。")
+    print(f"错误：依赖库imgtoch({VERSION})版本低于0.2.0。")
     sys.exit(-1)
+
 NONETYPE = type(None)
 PRESETCHARS = "HR#PXCFJIv?!+^-:. "
 
@@ -196,8 +196,7 @@ class FFCmdUtils:
                 return execPath
         except Exception:
             pass
-        separator = (":", ";")[osName]
-        pathsInPATH = os.getenv("PATH", "").split(separator)
+        pathsInPATH = os.getenv("PATH", "").split(os.pathsep)
         for path in pathsInPATH:
             execPath = os.path.join(path, ffexecutable)
             if os.path.isfile(execPath) and os.access(execPath, 1):
@@ -248,15 +247,15 @@ class FFCmdUtils:
             raise TypeError("参数savePath的值数据类型必须是字符串。")
         command = [
             *self.__cmd,
-            "-i",
+            "-i",  # 指定输入路径
             audioPath,
-            "-i",
+            "-i",  # 指定输入路径
             videoPath,
-            "-c:v",
-            "copy",
-            "-c:a",
-            "copy",
-            savePath,
+            "-c:v",  # 指定视频解码器
+            "copy",  # 视频解码器是"复制"
+            "-c:a",  # 指定音频解码器
+            "copy",  # 音频解码器是"复制"
+            savePath,  # 文件输出路径
         ]
         if overwrite:
             command.append("-y")
@@ -307,14 +306,14 @@ class FFCmdUtils:
         if option == "both":
             command.extend(
                 (
-                    "-an",
-                    "-c:v",
-                    "copy",
-                    videoSavePath,
-                    "-vn",
-                    "-c:a",
-                    "copy",
-                    audioSavePath,
+                    "-an",  # 跳过音频流
+                    "-c:v",  # 指定视频解码器
+                    "copy",  # 视频解码器是"复制"
+                    videoSavePath,  # 视频保存路径
+                    "-vn",  # 不选择音频流
+                    "-c:a",  # 指定音频解码器
+                    "copy",  # 音频解码器是"复制"
+                    audioSavePath,  # 音频保存路径
                 )
             )
         elif option == "audio":
@@ -366,11 +365,11 @@ class FFCmdUtils:
             raise TypeError("参数codec的值数据类型必须是字符串类型。")
         command = [*self.__cmd, "-i", videoPath]
         if codec is not None:
-            command.extend(("-c:v", f"{codec}"))
+            command.extend(("-c:v", f"{codec}"))  # 指定视频解码器
         if fps is not None:
-            command.extend(("-r", f"{fps}"))
+            command.extend(("-r", f"{fps}"))  # 指定视频帧率
         if bitRate is not None:
-            command.extend(("-b:v", f"{bitRate}k"))
+            command.extend(("-b:v", f"{bitRate}k"))  # 指定视频比特率
         if overwrite:
             command.append("-y")
         else:
@@ -416,21 +415,21 @@ class FFCmdUtils:
         elif not isinstance(savePath, str):
             raise TypeError("参数savePath的值数据类型必须是字符串。")
         try:
-            imageNameList = os.listdir(imageDir)
+            imageNames = os.listdir(imageDir)
+            if not imageNames:
+                return False
         except Exception as err:
-            print(f"图片目录读取失败：{err}。")
+            print(f"图片目录读取出错了：{err}。")
             return False
-        if not imageNameList:
-            return False
-        fileName, ext = os.path.splitext(imageNameList[0])
+        fileName, ext = os.path.splitext(imageNames[0])
         pathWithName = os.path.join(imageDir, fileName.rsplit("_", 1)[0])
         command = [*self.__cmd, "-i", f"{pathWithName}_%d{ext}"]
         if codec is not None:
-            command.extend(("-c:v", codec))
+            command.extend(("-c:v", codec))  # 指定视频解码器
         if fps is not None:
-            command.extend(("-r", f"{fps}"))
+            command.extend(("-r", f"{fps}"))  # 指定视频帧率
         if bitRate is not None:
-            command.extend(("-b:v", f"{bitRate}k"))
+            command.extend(("-b:v", f"{bitRate}k"))  # 指定视频比特率
         if overwrite:
             command.extend(("-y", savePath))
         else:
@@ -474,9 +473,9 @@ class FFCmdUtils:
         validSuffix = ".jpg", ".jpeg", ".png"
         if suffix not in validSuffix:
             suffix = validSuffix[0]
-            print(f"参数suffix的值无效，默认使用'.jpg'，可用值：{validSuffix}。")
-        fullSavePath = os.path.join(saveDir, f"{prefix}_%d{suffix}")
-        command = [*self.__cmd, "-i", videoPath, fullSavePath]
+            print(f"无效suffix参数值，默认'.jpg'，可用值：{validSuffix}。")
+        ImagesFullSavePath = os.path.join(saveDir, f"{prefix}_%d{suffix}")
+        command = [*self.__cmd, "-i", videoPath, ImagesFullSavePath]
         if overwrite:
             command.append("-y")
         else:
